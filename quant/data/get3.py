@@ -1,7 +1,7 @@
 import yfinance as yf
 import pandas as pd
 
-def get_stock_data(symbol="TSLA", start_date=None, end_date=None):
+def get_stock_data(symbol="VOO", start_date=None, end_date=None):
     """
     获取股票数据
     :param symbol: 股票代码，如'AAPL'（苹果公司）
@@ -13,8 +13,8 @@ def get_stock_data(symbol="TSLA", start_date=None, end_date=None):
         # 获取股票数据
         stock = yf.Ticker(symbol)
         df = stock.history(
-            start=start_date if start_date else "2019-01-01",
-            end=end_date if end_date else "2024-02-18",
+            start=start_date if start_date else "2020-01-01",
+            end=end_date if end_date else "2025-02-18",
             interval="1d"
         )
         
