@@ -1,6 +1,6 @@
 import backtrader as bt
 import pandas as pd
-from data.get3 import get_stock_data
+from data.get2 import get_stock_data
 
 class MACDStrategy(bt.Strategy):
     params = (
@@ -65,9 +65,9 @@ class MACDStrategy(bt.Strategy):
     def stop(self):
         # 策略结束时打印交易汇总
         print('\n====== 交易记录 ======')
-        for trade in self.trades:
-            print(f"日期: {trade['date']}, 类型: {trade['type']}, 价格: {trade['price']:.2f}")
-            print(f"DIF: {trade['DIF']:.4f}, DEA: {trade['DEA']:.4f}, MACD: {trade['MACD']:.4f}\n")
+        # for trade in self.trades:
+        #     print(f"日期: {trade['date']}, 类型: {trade['type']}, 价格: {trade['price']:.2f}")
+        #     print(f"DIF: {trade['DIF']:.4f}, DEA: {trade['DEA']:.4f}, MACD: {trade['MACD']:.4f}\n")
 
 # 运行回测
 cerebro = bt.Cerebro()
