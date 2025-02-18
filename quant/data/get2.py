@@ -19,7 +19,7 @@ def get_stock_data(symbol="603915", start_date=None, end_date=None):
         df = ak.stock_zh_a_hist(
             symbol=symbol,
             period="daily",
-            start_date="20230101" if start_date is None else start_date,
+            start_date="20190101" if start_date is None else start_date,
             end_date="20240218" if end_date is None else end_date,
             adjust="qfq"  # 前复权数据
         )

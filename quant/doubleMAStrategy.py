@@ -1,6 +1,6 @@
 import backtrader as bt
 import pandas as pd
-from data.get2 import get_stock_data
+from data.get3 import get_stock_data
 
 class DoubleMAStrategy(bt.Strategy):
     params = (('fast', 5), ('slow', 20))
@@ -14,8 +14,10 @@ class DoubleMAStrategy(bt.Strategy):
         if not self.position:
             if self.crossover > 0:  # 金叉
                 self.buy(size=100)
+                print(f'金叉买入，价格：{self.data.close[0]:.2f}')
         elif self.crossover < 0:    # 死叉
             self.close()
+            print(f'死叉卖出，价格：{self.data.close[0]:.2f}')
 
 # 运行回测
 cerebro = bt.Cerebro()

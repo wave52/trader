@@ -1,6 +1,6 @@
 import backtrader as bt
 import pandas as pd
-from data.get1 import get_stock_data
+from data.get3 import get_stock_data
 
 class MACDDivergenceStrategy(bt.Strategy):
     params = (
