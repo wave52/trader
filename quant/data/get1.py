@@ -18,4 +18,4 @@ def get_stock_data(symbol="sh000300", period="daily"):
 
 # 保存数据到CSV
 data = get_stock_data()
-data.to_csv("hs300.csv")
+data.to_csv("sh000300.csv")

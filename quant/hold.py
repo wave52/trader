@@ -1,6 +1,6 @@
 import backtrader as bt
 import pandas as pd
-from data.get3 import get_stock_data
+from data.get2 import get_stock_data
 
 class HoldStrategy(bt.Strategy):
     """
@@ -31,7 +31,7 @@ class HoldStrategy(bt.Strategy):
 
 # 运行回测
 cerebro = bt.Cerebro()
-df = get_stock_data("VOO", '2023-01-01')  # 获取股票数据
+df = get_stock_data()  # 获取股票数据
 data = bt.feeds.PandasData(dataname=df)
 cerebro.adddata(data)
 cerebro.addstrategy(HoldStrategy)

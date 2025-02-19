@@ -1,6 +1,6 @@
 import backtrader as bt
 import pandas as pd
-from data.get3 import get_stock_data
+from data.get2 import get_stock_data
 
 class BetterDoubleMAStrategy(bt.Strategy):
     """
@@ -11,12 +11,12 @@ class BetterDoubleMAStrategy(bt.Strategy):
     - 移动止损保护盈利
     """
     params = (
-        ('fast_period', 10),    # 快速均线周期
+        ('fast_period', 5),    # 快速均线周期
         ('slow_period', 30),    # 慢速均线周期
         ('atr_period', 14),     # ATR周期
         ('risk_pct', 0.02),     # 单次风险比例
-        ('atr_multiplier', 2),  # ATR止损倍数
-        ('trailing_pct', 0.8)   # 移动止损比例
+        ('atr_multiplier', 3),  # ATR止损倍数
+        ('trailing_pct', 0.5)   # 移动止损比例
     )
 
     def __init__(self):
@@ -89,17 +89,10 @@ class BetterDoubleMAStrategy(bt.Strategy):
     def stop(self):
         # 策略结束时打印交易汇总
         print('\n====== 交易记录 ======')
-        for trade in self.trades:
-            if trade['type'] == '买入':
-                print(f"买入: 日期={trade['date']}, 价格={trade['price']:.2f}, "
-                      f"数量={trade['size']:.2f}, 止损={trade['stop']:.2f}")
-            else:
-                print(f"卖出: 日期={trade['date']}, 价格={trade['price']:.2f}, "
-                      f"原因={trade['reason']}")
 
 # 运行回测
 cerebro = bt.Cerebro()
-df = get_stock_data("VOO", '2023-01-01')  # 获取股票数据
+df = get_stock_data()  # 获取股票数据
 data = bt.feeds.PandasData(dataname=df)
 cerebro.adddata(data)
 cerebro.addstrategy(BetterDoubleMAStrategy)
