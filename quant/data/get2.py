@@ -1,7 +1,7 @@
 import akshare as ak
 import pandas as pd 
 
-def get_stock_data(symbol="600126", start_date=None, end_date=None):
+def get_stock_data(symbol="002123", start_date=None, end_date=None):
     """
     获取A股股票数据
     :param symbol: 股票代码，如'603915'（国茂股份）

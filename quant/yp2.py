@@ -1,6 +1,6 @@
 import backtrader as bt
 import pandas as pd
-from data.get4 import get_stock_data
+from data.get2 import get_stock_data
 
 class MA5Strategy(bt.Strategy):
     """

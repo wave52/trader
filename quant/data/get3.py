@@ -13,7 +13,7 @@ def get_stock_data(symbol="VOO", start_date=None, end_date=None):
         # 获取股票数据
         stock = yf.Ticker(symbol)
         df = stock.history(
-            start=start_date if start_date else "2020-01-01",
+            start=start_date if start_date else "2024-01-01",
             end=end_date if end_date else "2025-02-18",
             interval="1d"
         )

@@ -4,12 +4,12 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 import random
+import json
+import os
 
-class StockSelector:
-    def __init__(self, stock_pool=None):
-        self.stock_pool = stock_pool
-        self.factor_data = pd.DataFrame()
-        self.selected_stocks = []
+class StockDataCollector:
+    """股票数据收集器"""
+    def __init__(self):
         self.stock_info = None
         
     def get_all_stock_data(self, max_retries=3):
@@ -25,11 +25,12 @@ class StockSelector:
                 # 重命名列以匹配我们需要的格式
                 stock_df = stock_df.rename(columns={
                     '市盈率-动态': '市盈率',
-                    '60日涨跌幅': 'ROE'  # 暂时用60日涨跌幅替代ROE
+                    '60日涨跌幅': 'ROE',  # 暂时用60日涨跌幅替代ROE
+                    '最新价': '当前价格'  # 确保价格列名一致
                 })
                 
                 # 确保必要的列存在
-                required_columns = ['代码', '名称', 'ROE', '市盈率', '市净率', '总市值']
+                required_columns = ['代码', '名称', 'ROE', '市盈率', '市净率', '总市值', '当前价格']
                 if not all(col in stock_df.columns for col in required_columns):
                     print("缺少必要的数据列，实际列名:", stock_df.columns.tolist())
                     return False
@@ -39,16 +40,25 @@ class StockSelector:
                 stock_df['市盈率'] = pd.to_numeric(stock_df['市盈率'], errors='coerce')
                 stock_df['市净率'] = pd.to_numeric(stock_df['市净率'], errors='coerce')
                 stock_df['总市值'] = pd.to_numeric(stock_df['总市值'], errors='coerce')
+                stock_df['当前价格'] = pd.to_numeric(stock_df['当前价格'], errors='coerce')
                 
                 # 将总市值从元转换为亿元
                 stock_df['总市值'] = stock_df['总市值'] / 100000000
                 
-                # 剔除科创板和创业板
-                stock_df = stock_df[stock_df['代码'].str.match('^(60|00)')]
-                # 剔除ST股票
-                stock_df = stock_df[~stock_df['名称'].str.contains('ST|退')]
-                # 剔除数据不完整的股票
-                stock_df = stock_df.dropna(subset=['ROE', '市盈率', '市净率', '总市值'])
+                # 过滤条件：
+                # 1. 只保留主板股票（以60或00开头的股票代码）
+                #stock_df = stock_df[stock_df['代码'].str.match('^(60|00)')]
+                
+                # 2. 股价小于20元
+                #stock_df = stock_df[stock_df['当前价格'] < 20]
+                
+                # 3. 剔除ST股票
+                #stock_df = stock_df[~stock_df['名称'].str.contains('ST|退')]
+                
+                # 4. 剔除数据不完整的股票
+                #stock_df = stock_df.dropna(subset=['ROE', '市盈率', '市净率', '总市值', '当前价格'])
+                
+                print(f"\n过滤后剩余股票数量: {len(stock_df)}")
                 
                 self.stock_info = stock_df
                 return True
@@ -87,24 +97,11 @@ class StockSelector:
             print(f"计算动量因子时出错: {str(e)}")
             return None
 
-    def normalize_factor(self, series):
-        """对因子进行标准化"""
-        try:
-            if len(series) <= 1:
-                return series
-            return (series - series.mean()) / series.std()
-        except Exception as e:
-            print(f"标准化因子时出错: {str(e)}")
-            return series
-
-    def select_stocks(self, top_n=10):
-        """选股主函数"""
+    def collect_and_save_data(self, output_file='stock_data.json'):
+        """收集数据并保存到JSON文件"""
         if not self.get_all_stock_data():
             print("获取股票数据失败")
-            return []
-
-        if self.stock_pool is not None:
-            self.stock_info = self.stock_info[self.stock_info['代码'].isin(self.stock_pool)]
+            return False
 
         factor_data = []
         print("\n开始收集股票数据...")
@@ -144,7 +141,8 @@ class StockSelector:
                     'roe': roe,
                     'pe': pe,
                     'pb': pb,
-                    'total_mv': total_mv
+                    'total_mv': total_mv,
+                    'update_time': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
                 print(f"股票 {stock_code} 数据收集完成")
                 
@@ -152,29 +150,73 @@ class StockSelector:
                 print(f"处理股票 {stock_code} 时出错: {str(e)}")
                 continue
 
-        self.factor_data = pd.DataFrame(factor_data)
+        # 保存数据到JSON文件
+        if factor_data:
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(factor_data, f, ensure_ascii=False, indent=2)
+            print(f"\n数据已保存到 {output_file}")
+            return True
+        return False
+
+class StockSelector:
+    """股票选择器"""
+    def __init__(self, stock_pool=None):
+        self.stock_pool = stock_pool
+        self.factor_data = pd.DataFrame()
+        self.selected_stocks = []
         
-        if len(self.factor_data) == 0:
-            print("没有获取到有效数据")
+    def normalize_factor(self, series):
+        """对因子进行标准化"""
+        try:
+            if len(series) <= 1:
+                return series
+            return (series - series.mean()) / series.std()
+        except Exception as e:
+            print(f"标准化因子时出错: {str(e)}")
+            return series
+
+    def select_stocks(self, data_file='stock_data.json', top_n=10):
+        """从JSON文件读取数据并选股"""
+        try:
+            # 读取JSON数据
+            if not os.path.exists(data_file):
+                print(f"数据文件 {data_file} 不存在")
+                return []
+                
+            with open(data_file, 'r', encoding='utf-8') as f:
+                factor_data = json.load(f)
+            
+            self.factor_data = pd.DataFrame(factor_data)
+            
+            # 如果指定了股票池，进行过滤
+            if self.stock_pool is not None:
+                self.factor_data = self.factor_data[self.factor_data['stock_code'].isin(self.stock_pool)]
+            
+            if len(self.factor_data) == 0:
+                print("没有获取到有效数据")
+                return []
+
+            # 标准化因子
+            self.factor_data['momentum_norm'] = self.normalize_factor(self.factor_data['momentum'])
+            self.factor_data['roe_norm'] = self.normalize_factor(self.factor_data['roe'])
+            self.factor_data['pe_norm'] = self.normalize_factor(1 / self.factor_data['pe'])
+            self.factor_data['pb_norm'] = self.normalize_factor(1 / self.factor_data['pb'])
+
+            # 计算综合得分
+            self.factor_data['total_score'] = (
+                self.factor_data['momentum_norm'] * 0.3 +
+                self.factor_data['roe_norm'] * 0.4 +
+                self.factor_data['pe_norm'] * 0.15 +
+                self.factor_data['pb_norm'] * 0.15
+            )
+
+            # 选择得分最高的股票
+            self.selected_stocks = self.factor_data.nlargest(top_n, 'total_score')
+            return self.selected_stocks
+            
+        except Exception as e:
+            print(f"选股过程中出错: {str(e)}")
             return []
-
-        # 标准化因子
-        self.factor_data['momentum_norm'] = self.normalize_factor(self.factor_data['momentum'])
-        self.factor_data['roe_norm'] = self.normalize_factor(self.factor_data['roe'])
-        self.factor_data['pe_norm'] = self.normalize_factor(1 / self.factor_data['pe'])
-        self.factor_data['pb_norm'] = self.normalize_factor(1 / self.factor_data['pb'])
-
-        # 计算综合得分
-        self.factor_data['total_score'] = (
-            self.factor_data['momentum_norm'] * 0.3 +
-            self.factor_data['roe_norm'] * 0.4 +
-            self.factor_data['pe_norm'] * 0.15 +
-            self.factor_data['pb_norm'] * 0.15
-        )
-
-        # 选择得分最高的股票
-        self.selected_stocks = self.factor_data.nlargest(top_n, 'total_score')
-        return self.selected_stocks
 
     def print_results(self):
         """打印选股结果"""
@@ -191,8 +233,13 @@ class StockSelector:
             print(f"市净率: {stock['pb']:.2f}")
             print(f"总市值: {stock['total_mv']:.2f}亿")
 
-def main():
-    """主函数"""
+def collect_data():
+    """收集数据的主函数"""
+    collector = StockDataCollector()
+    collector.collect_and_save_data()
+
+def select_stocks():
+    """选股的主函数"""
     # 测试用的股票池（以优质蓝筹股为例）
     test_stocks = [
         '600519',  # 贵州茅台
@@ -203,7 +250,7 @@ def main():
     ]
     
     # 创建选股器实例
-    selector = StockSelector(test_stocks)  # 不传入stock_pool则选择全市场股票
+    selector = StockSelector()  # 不传入stock_pool则选择全市场股票
     
     # 执行选股
     selected = selector.select_stocks(top_n=10)
@@ -212,4 +259,6 @@ def main():
     selector.print_results()
 
 if __name__ == "__main__":
-    main()
+    # 可以根据需要选择执行数据收集还是选股
+    # collect_data()  # 收集数据
+    select_stocks()  # 执行选股
