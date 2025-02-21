@@ -198,16 +198,21 @@ class StockSelector:
 
             # 标准化因子
             self.factor_data['momentum_norm'] = self.normalize_factor(self.factor_data['momentum'])
-            self.factor_data['roe_norm'] = self.normalize_factor(self.factor_data['roe'])
+            # self.factor_data['roe_norm'] = self.normalize_factor(self.factor_data['roe'])
             self.factor_data['pe_norm'] = self.normalize_factor(1 / self.factor_data['pe'])
             self.factor_data['pb_norm'] = self.normalize_factor(1 / self.factor_data['pb'])
 
-            # 计算综合得分
+            # 计算综合得分（重新分配权重），暂时不计算ROE
+            # self.factor_data['total_score'] = (
+            #     self.factor_data['momentum_norm'] * 0.3 +
+            #     self.factor_data['roe_norm'] * 0.4 +
+            #     self.factor_data['pe_norm'] * 0.15 +
+            #     self.factor_data['pb_norm'] * 0.15
+            # )
             self.factor_data['total_score'] = (
-                self.factor_data['momentum_norm'] * 0.3 +
-                self.factor_data['roe_norm'] * 0.4 +
-                self.factor_data['pe_norm'] * 0.15 +
-                self.factor_data['pb_norm'] * 0.15
+                self.factor_data['momentum_norm'] * 0.4 +
+                self.factor_data['pe_norm'] * 0.3 +
+                self.factor_data['pb_norm'] * 0.3
             )
 
             # 选择得分最高的股票
