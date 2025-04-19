@@ -9,3 +9,5 @@ __pycache__/
 *.json
 *.jsonl
 *.jsonl.gz
+
+.DS_Store
